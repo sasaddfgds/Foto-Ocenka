@@ -1,49 +1,56 @@
-Projekt zdjecia z ocenianiem
+Proszę bardzo. Ubrałem te suche fakty w ludzki język, żeby wyglądało to jak prawdziwa dokumentacja (albo README) napisana przez deva, a nie wygenerowana z szablonu lista. Dorzuciłem też trochę krytycznej analizy twoich pomysłów, tak jak chciałeś.
 
+Specyfikacja projektu: Platforma do oceniania zdjęć (Like/Dislike)
+Opis: Aplikacja webowa do publikacji i oceniania obrazków. Pomysł jest prosty: userzy wrzucają fotki, reszta daje lajki albo dislajki. Główny ficzer to niestandardowe podejście do trzymania statyki, żeby totalnie wyzerować koszty hostingu obrazków.
 
+ Stack technologiczny
+Backend: PHP. Na start można polecieć na natywnych skryptach, ale composer to absolutny mus (choćby do autoloadingu klas i przyszłych paczek).
 
-Stuck technologiczny:
+Frontend: Vanilla JS (ES6+). Żeby to jakoś sensownie budować i ułatwić sobie życie, wepniemy Vite.
 
-PHP (Koniecznie z composer ale może na początku w php script)
+Wygląd: HTML5 + CSS. Lecimy w semantykę i chociaż podstawową zgodność ze standardami WCAG (dostępność).
 
-JS vanila ES6 (może z vite dla node.js)
+Baza danych: MariaDB (zarządzanie przez phpMyAdmin albo jakiegokolwiek innego klienta).
 
-html css dla wyglądu (Semantyczny z WCAG)
+ Architektura i obsługa plików
+Używamy tu GitHuba jako darmowego CDN-a. Rozwiązanie specyficzne, ale na pet-project — ujdzie.
 
-Architektura
+Obrazy: Leżą wyłącznie w repozytorium na GitHubie. (Jeśli w przyszłości wpadnie moderacja, trzeba będzie ogarnąć tymczasowy zapis — katalog temp na serwerze przed pushem).
 
+Rola Backendu: Działa wyłącznie jako proxy do zapisu. Odbiera plik od usera i za pomocą tokena pushuje go bezpośrednio do repo.
 
+Rola Frontendu: Backend oddaje frontowi tylko metadane (linki) zapisane w bazie. Frontend ciągnie same obrazki bezpośrednio z GitHuba, omijając nasz serwer.
 
-backend jest proxy tylko do zapoisu a nie do odczytu plików z repo github i on ma do niego token
+Analiza architektury: Używanie API GitHuba do hostowania obrazków to radykalnie darmowa prowizorka. Plusy — zerowe koszty za storage. Minusy — limity API GitHuba i potencjalny ban na repo, jeśli ruch będzie jak na Pornhubie. Alternatywa na przyszłość: storage kompatybilny z S3 (np. Cloudflare R2, mają cholernie spory darmowy tier).
 
-Frontend dzieki meta danym od backendu przechowywanych w bazie danych mariaDB phpMyadmin pobiera bezpośrednio zdjecia z repo github
+ Logika biznesowa
+Autoryzacja: Standardowa rejestracja i logowanie. Niezalogowani mogą tylko oglądać (albo w ogóle nic, jeśli zamkniemy widoki).
 
-Obrazy tylko na repo github (Ostatecznie temp w razie chęci wprowadzenia moderacji)
+Strona główna (Feed): Wyświetlanie top 20 obrazków z największą liczbą lajków.
 
-Logika biznesowa
+System ocen: User może dać tylko jeden lajk albo dislajk pod konkretną fotką. Ponowne kliknięcia albo cofają akcję, albo są twardo ignorowane (żeby jeden hejter nie nabił 40 dislajków).
 
+Profile użytkowników: * Przy każdym zdjęciu jest awatar autora.
 
+Po kliknięciu w awatar odpala się profil usera z galerią tylko jego wrzutek.
 
-Użytkownik musi się zarejestrować lub zalogować
+Bonus: Na profilu wyświetlamy zagregowane statystyki — łączną sumę wszystkich zebranych lajków i dislajków za wszystkie zdjęcia danego użytkownika.
 
-Wyświetla się na stronie głównej 20 obrazów z najwiekszą liczbą polubień
+Upload: User wysyła obrazek, backend generuje potrzebne metadane, wysyła plik na GitHuba, a link i dane autora zapisuje w bazie.
 
-User może polubić lub nie polubić zdejcie tylko raz (unikamy od jednegoi usera 40 dislikeów)
+ Bonusy: Optymalizacja i Bezpieczeństwo
+Optymalizacja obrazów: W locie konwertujemy wszystko do formatu .webp i robimy twardy resize do max 1920x1080. To krytyczne, żeby repo na GitHubie nie spuchło w dwa dni.
 
-przy obrazie mamy avatar usera gdzie jak klikniemy na niego to mamy jego profil z tylko jego zdjeciami które możemy ocenić like/dislike (bonus na profilu mamy sumę likleów i dislików za zdjecia danegoi usera)
+Rate Limiting: Zabezpieczenie przed spamem na endpoincie do uploadu. Np.: max 10 wrzutek na minutę od jednego zalogowanego usera.
 
-User może wysłać obraz, backend zapisze meta dane i dzieki temu że ma token to prześle i zapisze zdjecie w repo github oraz w tabeli bazy danych potrzebne metadane
+Real-time: Używamy SSE (Server-Sent Events)  do odświeżania lajków/feedu w czasie rzeczywistym.
 
-+++
+Analiza: SSE pasuje tu idealnie. Potrzebujemy tylko odbierać aktualizacje z serwera, dwukierunkowa komunikacja (WebSockets) to w tym przypadku kompletny overkill, a long-polling to już po prostu martwa technologia.
 
-Bosuy optymalizacji i bezpieczeństwa
+Bezpieczeństwo:
 
+XSS: Twardy escape całego inputu od usera przy wyświetlaniu.
 
+CSRF: Obowiązkowe tokeny do wszystkich zapytań POST/PUT/DELETE.
 
-optymalizacja obrazu do formatu .webp i max rozmiar 1920x1080
-
-rate limiter na requesty uploadu np.: 10 zjedjęć na minutę dla danego usera.
-
-XXS CRFS HASH haseł
-
-sse 😎 (emoji win + .) albo tunbelowanie albop subskrybcja ale chyba SSE
+Hasła: Żadnego MD5, używamy natywnych funkcji PHP password_hash z solidnym algorytmem BCRYPT albo ARGON2.
