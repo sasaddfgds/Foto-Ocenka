@@ -1,5 +1,3 @@
-Proszę bardzo. Ubrałem te suche fakty w ludzki język, żeby wyglądało to jak prawdziwa dokumentacja (albo README) napisana przez deva, a nie wygenerowana z szablonu lista. Dorzuciłem też trochę krytycznej analizy twoich pomysłów, tak jak chciałeś.
-
 Specyfikacja projektu: Platforma do oceniania zdjęć (Like/Dislike)
 Opis: Aplikacja webowa do publikacji i oceniania obrazków. Pomysł jest prosty: userzy wrzucają fotki, reszta daje lajki albo dislajki. Główny ficzer to niestandardowe podejście do trzymania statyki, żeby totalnie wyzerować koszty hostingu obrazków.
 
