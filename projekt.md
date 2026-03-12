@@ -1,7 +1,7 @@
 Specyfikacja Projektu: ImageRate (Like/Dislike Platform)
 Aplikacja webowa do publikacji i oceniania obrazków. Kluczowy koncept: całkowite wyzerowanie kosztów hostingu poprzez wykorzystanie infrastruktury zewnętrznej jako darmowego CDN-a.
 
-🛠 Stack Technologiczny
+ Stack Technologiczny
 Backend: PHP (Native + Composer do autoloadingu i paczek). Żadnych ciężkich frameworków, czysta wydajność.
 
 Frontend: Vanilla JS (ES6+). Do budowania używamy Vite — bo życie jest za krótkie na konfigurowanie Webpacka.
@@ -10,7 +10,7 @@ Wygląd: Semantyczny HTML5 + CSS. Zgodność z WCAG (dostępność), żeby każd
 
 Baza danych: MariaDB.
 
-🏗 Architektura i Obsługa Plików
+ Architektura i Obsługa Plików
 Projekt opiera się na "partyzanckim" wykorzystaniu GitHuba jako storage'u.
 
 GitHub jako CDN: Obrazy nie obciążają naszego serwera. Leżą w dedykowanym repozytorium.
@@ -22,7 +22,7 @@ Frontend: Dostaje od bazy danych tylko URL-e. Przeglądarka ciągnie grafiki pro
 Analiza: Rozwiązanie radykalnie tanie (0 PLN). Przy ogromnym ruchu grozi banem od GitHuba.
 Skalowalność: W razie sukcesu migracja na Cloudflare R2 (ogromny darmowy tier, pełna kompatybilność z S3).
 
-⚙️ Mechanika Systemu
+ Mechanika Systemu
 Autoryzacja: Rejestracja/Logowanie. Goście mają tylko tryb "Read-only".
 
 Feed: Top 20 obrazków sortowanych po rankingu (Like/Dislike).
@@ -33,7 +33,7 @@ Profile: Galeria autorska + zagregowane statystyki popularności (suma wszystkic
 
 Upload: Automatyczne generowanie metadanych i natychmiastowa wysyłka do "CDN".
 
-⚡ Optymalizacja i Bezpieczeństwo
+ Optymalizacja i Bezpieczeństwo
 Żadnej prowizorki w kwestiach krytycznych:
 
 Obróbka obrazu: Obowiązkowa konwersja do .webp + twardy resize (max 1920x1080). Oszczędzamy miejsce i transfer.
