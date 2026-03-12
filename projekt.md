@@ -1,54 +1,50 @@
-Specyfikacja projektu: Platforma do oceniania zdjęć (Like/Dislike)
-Opis: Aplikacja webowa do publikacji i oceniania obrazków. Pomysł jest prosty: userzy wrzucają fotki, reszta daje lajki albo dislajki. Główny ficzer to niestandardowe podejście do trzymania statyki, żeby totalnie wyzerować koszty hostingu obrazków.
+Specyfikacja Projektu: ImageRate (Like/Dislike Platform)
+Aplikacja webowa do publikacji i oceniania obrazków. Kluczowy koncept: całkowite wyzerowanie kosztów hostingu poprzez wykorzystanie infrastruktury zewnętrznej jako darmowego CDN-a.
 
- Stack technologiczny
-Backend: PHP. Na start można polecieć na natywnych skryptach, ale composer to absolutny mus (choćby do autoloadingu klas i przyszłych paczek).
+🛠 Stack Technologiczny
+Backend: PHP (Native + Composer do autoloadingu i paczek). Żadnych ciężkich frameworków, czysta wydajność.
 
-Frontend: Vanilla JS (ES6+). Żeby to jakoś sensownie budować i ułatwić sobie życie, wepniemy Vite.
+Frontend: Vanilla JS (ES6+). Do budowania używamy Vite — bo życie jest za krótkie na konfigurowanie Webpacka.
 
-Wygląd: HTML5 + CSS. Lecimy w semantykę i chociaż podstawową zgodność ze standardami WCAG (dostępność).
+Wygląd: Semantyczny HTML5 + CSS. Zgodność z WCAG (dostępność), żeby każdy mógł hejtować zdjęcia bez barier.
 
-Baza danych: MariaDB (zarządzanie przez phpMyAdmin albo jakiegokolwiek innego klienta).
+Baza danych: MariaDB.
 
- Architektura i obsługa plików
-Używamy tu GitHuba jako darmowego CDN-a. Rozwiązanie specyficzne, ale na pet-project — ujdzie.
+🏗 Architektura i Obsługa Plików
+Projekt opiera się na "partyzanckim" wykorzystaniu GitHuba jako storage'u.
 
-Obrazy: Leżą wyłącznie w repozytorium na GitHubie. (Jeśli w przyszłości wpadnie moderacja, trzeba będzie ogarnąć tymczasowy zapis — katalog temp na serwerze przed pushem).
+GitHub jako CDN: Obrazy nie obciążają naszego serwera. Leżą w dedykowanym repozytorium.
 
-Rola Backendu: Działa wyłącznie jako proxy do zapisu. Odbiera plik od usera i za pomocą tokena pushuje go bezpośrednio do repo.
+Backend (Proxy): Odbiera plik od usera, wykonuje push przez API GitHuba bezpośrednio do repo.
 
-Rola Frontendu: Backend oddaje frontowi tylko metadane (linki) zapisane w bazie. Frontend ciągnie same obrazki bezpośrednio z GitHuba, omijając nasz serwer.
+Frontend: Dostaje od bazy danych tylko URL-e. Przeglądarka ciągnie grafiki prosto z serwerów GitHuba.
 
-Analiza architektury: Używanie API GitHuba do hostowania obrazków to radykalnie darmowa prowizorka. Plusy — zerowe koszty za storage. Minusy — limity API GitHuba i potencjalny ban na repo, jeśli ruch będzie jak na Pornhubie. Alternatywa na przyszłość: storage kompatybilny z S3 (np. Cloudflare R2, mają cholernie spory darmowy tier).
+Analiza: Rozwiązanie radykalnie tanie (0 PLN). Przy ogromnym ruchu grozi banem od GitHuba.
+Skalowalność: W razie sukcesu migracja na Cloudflare R2 (ogromny darmowy tier, pełna kompatybilność z S3).
 
- Logika biznesowa
-Autoryzacja: Standardowa rejestracja i logowanie. Niezalogowani mogą tylko oglądać (albo w ogóle nic, jeśli zamkniemy widoki).
+⚙️ Mechanika Systemu
+Autoryzacja: Rejestracja/Logowanie. Goście mają tylko tryb "Read-only".
 
-Strona główna (Feed): Wyświetlanie top 20 obrazków z największą liczbą lajków.
+Feed: Top 20 obrazków sortowanych po rankingu (Like/Dislike).
 
-System ocen: User może dać tylko jeden lajk albo dislajk pod konkretną fotką. Ponowne kliknięcia albo cofają akcję, albo są twardo ignorowane (żeby jeden hejter nie nabił 40 dislajków).
+System Ocen: Jeden głos na usera. Ponowne kliknięcie to undo. Logika po stronie backendu blokuje nabijanie statystyk przez boty.
 
-Profile użytkowników: * Przy każdym zdjęciu jest awatar autora.
+Profile: Galeria autorska + zagregowane statystyki popularności (suma wszystkich ocen użytkownika).
 
-Po kliknięciu w awatar odpala się profil usera z galerią tylko jego wrzutek.
+Upload: Automatyczne generowanie metadanych i natychmiastowa wysyłka do "CDN".
 
-Bonus: Na profilu wyświetlamy zagregowane statystyki — łączną sumę wszystkich zebranych lajków i dislajków za wszystkie zdjęcia danego użytkownika.
+⚡ Optymalizacja i Bezpieczeństwo
+Żadnej prowizorki w kwestiach krytycznych:
 
-Upload: User wysyła obrazek, backend generuje potrzebne metadane, wysyła plik na GitHuba, a link i dane autora zapisuje w bazie.
+Obróbka obrazu: Obowiązkowa konwersja do .webp + twardy resize (max 1920x1080). Oszczędzamy miejsce i transfer.
 
- Bonusy: Optymalizacja i Bezpieczeństwo
-Optymalizacja obrazów: W locie konwertujemy wszystko do formatu .webp i robimy twardy resize do max 1920x1080. To krytyczne, żeby repo na GitHubie nie spuchło w dwa dni.
+Rate Limiting: Max 10 wrzutek/min na usera. Spamowanie uploadem zabija każde API.
 
-Rate Limiting: Zabezpieczenie przed spamem na endpoincie do uploadu. Np.: max 10 wrzutek na minutę od jednego zalogowanego usera.
+Real-time: Odświeżanie ocen przez SSE (Server-Sent Events). WebSockety to w tym przypadku przerost formy nad treścią (overkill).
 
-Real-time: Używamy SSE (Server-Sent Events)  do odświeżania lajków/feedu w czasie rzeczywistym.
+Bezpieczeństwo (Zero tolerancji):
+XSS: Bezwzględny escape całego inputu przy renderowaniu.
 
-Analiza: SSE pasuje tu idealnie. Potrzebujemy tylko odbierać aktualizacje z serwera, dwukierunkowa komunikacja (WebSockets) to w tym przypadku kompletny overkill, a long-polling to już po prostu martwa technologia.
+CSRF: Tokeny dla każdej akcji zmieniającej stan (POST/PUT/DELETE).
 
-Bezpieczeństwo:
-
-XSS: Twardy escape całego inputu od usera przy wyświetlaniu.
-
-CSRF: Obowiązkowe tokeny do wszystkich zapytań POST/PUT/DELETE.
-
-Hasła: Żadnego MD5, używamy natywnych funkcji PHP password_hash z solidnym algorytmem BCRYPT albo ARGON2.
+Hasła: Zapomnij o MD5/SHA1. Używamy password_hash z algorytmem Argon2 lub BCRYPT.
